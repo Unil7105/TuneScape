@@ -1,0 +1,7 @@
+{
+  "name": "Aura Harmony Music",
+  "description": "A sophisticated 3-card music player with AI-powered song recommendations, real-time audio visualization, and a seamless glassmorphism UI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
