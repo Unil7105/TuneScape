@@ -6,8 +6,10 @@ import { fetchPlaylistVideos } from './services/youtubeService';
 import MusicSpace from './components/MusicSpace';
 import YouTubePlayer from './components/YouTubePlayer';
 import PlaylistInput from './components/PlaylistInput';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App: React.FC = () => {
+// Inner App component that uses auth context
+const AppContent: React.FC = () => {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -23,6 +25,7 @@ const App: React.FC = () => {
   const [playlistError, setPlaylistError] = useState<string | null>(null);
 
   const youtubePlayerRef = useRef<any>(null);
+  const { user, addPlaylist } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setShowControlsHint(false), 5000);
@@ -41,7 +44,12 @@ const App: React.FC = () => {
     }
   };
 
-  const loadPlaylist = async (playlistId: string) => {
+  const loadPlaylist = async (
+    playlistId: string,
+    playlistName?: string,
+    thumbnail?: string,
+    videoCount?: number
+  ) => {
     setIsLoadingPlaylist(true);
     setPlaylistError(null);
 
@@ -67,6 +75,14 @@ const App: React.FC = () => {
       setQueue(songs);
       setCurrentSong(songs[0]);
       setShowPlaylistInput(false);
+
+      // Save playlist for logged-in users
+      if (user) {
+        const name = playlistName || videos[0]?.title || 'Untitled Playlist';
+        const thumb = thumbnail || videos[0]?.thumbnail || '';
+        const count = videoCount || videos.length;
+        await addPlaylist(playlistId, name, thumb, count);
+      }
     } catch (error: any) {
       setPlaylistError(error.message || 'Failed to load playlist');
     } finally {
@@ -161,16 +177,6 @@ const App: React.FC = () => {
       {/* Modern Fixed Header */}
       {queue.length > 0 && (
         <header className="absolute top-0 inset-x-0 p-10 flex justify-between items-center z-20 pointer-events-none">
-          {/* <div className="flex items-center gap-5 pointer-events-auto">
-            <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center shadow-2xl">
-              <i className="fas fa-record-vinyl text-white animate-spin-slow"></i>
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-2xl font-black tracking-tighter heading-font">AURA</h1>
-              <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-400">Gallery V3</span>
-            </div>
-          </div> */}
-
           <button
             onClick={() => setShowPlaylistInput(true)}
             className="pointer-events-auto px-8 py-3 rounded-full font-bold text-[11px] uppercase tracking-widest transition-all shadow-xl bg-white text-black hover:bg-black hover:text-white"
@@ -253,6 +259,15 @@ const App: React.FC = () => {
         </div>
       )}
     </div>
+  );
+};
+
+// Main App wrapper with AuthProvider
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
